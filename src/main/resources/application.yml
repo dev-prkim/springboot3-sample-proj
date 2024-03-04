@@ -1,8 +1,11 @@
+server:
+  port: 8091
+
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/paran_sample?useSSL=false&characterEncoding=UTF-8
-    username: root
+    url: jdbc:mysql://localhost:13306/paran_sample?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    username: paran
     password: 1234
 
   jpa:
@@ -36,6 +39,6 @@ logging:
     com.zaxxer.hikari: INFO
     jdbc.resultset: ERROR
     jdbc.resultsettable: DEBUG
-    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: trace
     org.hibernate.type.descriptor.sql.BasicExtractor: OFF

@@ -14,10 +14,10 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
 @EntityScan(basePackages = {
-        "com.paran.sample.persistence.entity.**"
+        "com.paran.sample.domain.**.persistence.entity"
 })
 @EnableJpaRepositories(
-        basePackages = "com.paran.sample.persistence.repository.**"
+        basePackages = "com.paran.sample.domain.**.persistence.repository"
 )
 @EnableTransactionManagement
 @EnableJpaAuditing

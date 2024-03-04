@@ -1,6 +1,6 @@
 package com.paran.sample.config;
 
-import com.paran.sample.persistence.repository.token.AccessTokenRepository;
+import com.paran.sample.domain.token.persistence.repository.AccessTokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
