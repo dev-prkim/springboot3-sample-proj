@@ -22,7 +22,7 @@ group = 'com.paran'
 version = '0.0.1-SNAPSHOT'
 
 java {
-    sourceCompatibility = '17'
+    sourceCompatibility = '21'
 }
 
 repositories {
@@ -72,7 +72,7 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-// === ⭐ QueryDsl 빌드 옵션 (선택) ===
+// === QueryDsl 빌드 옵션 ===
 def querydslDir = layout.buildDirectory.dir("generated/querydsl").get().asFile
 
 sourceSets {
