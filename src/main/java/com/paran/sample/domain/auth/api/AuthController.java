@@ -2,12 +2,9 @@ package com.paran.sample.domain.auth.api;
 
 import com.paran.sample.domain.auth.dto.LoginReq;
 import com.paran.sample.domain.auth.dto.RegisterReq;
-import com.paran.sample.domain.auth.dto.LoginRes;
-import com.paran.sample.domain.auth.dto.RegisterRes;
 import com.paran.sample.domain.auth.service.AuthService;
 
 import com.paran.sample.domain.common.dto.ResponseWrapper;
-import com.paran.sample.exception.code.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

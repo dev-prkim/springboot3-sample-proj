@@ -7,6 +7,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.paran.sample.domain.user.persistence.type.Permission.*;
 
@@ -32,7 +33,7 @@ public enum RoleType {
         var authorities = getPermissions()
                 .stream()
                 .map(permission -> new SimpleGrantedAuthority(permission.getPermission()))
-                .toList();
+                .collect(Collectors.toList());
         authorities.add(new SimpleGrantedAuthority("ROLE_" + this.name()));
         return authorities;
     }

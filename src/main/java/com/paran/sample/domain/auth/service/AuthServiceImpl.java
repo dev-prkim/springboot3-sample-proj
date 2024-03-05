@@ -65,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
 
-        saveAccessToken(savedUser, jwtToken);
+        saveAccessToken(savedUser, jwtToken, refreshToken);
 
         return new RegisterRes(savedUser.getAppUserIdx(), jwtToken, refreshToken);
     }
@@ -84,14 +84,15 @@ public class AuthServiceImpl implements AuthService {
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
         revokeAllAccessTokens(user);
-        saveAccessToken(user, jwtToken);
+        saveAccessToken(user, jwtToken, refreshToken);
         return new LoginRes(user.getAppUserIdx(), user.getLoginId(), user.getName(), jwtToken, refreshToken);
     }
 
-    private void saveAccessToken(AppUser user, String jwtToken) {
+    private void saveAccessToken(AppUser user, String jwtToken, String refreshToken) {
         var accessToken = AccessToken.builder()
                 .user(user)
                 .token(jwtToken)
+                .refreshToken(refreshToken)
                 .tokenType(TokenType.BEARER)
                 .revoked(false)
                 .expired(false)

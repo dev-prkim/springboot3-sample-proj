@@ -19,6 +19,7 @@ public class AccessToken extends AbstractAuditable {
 
     @Column(unique = true, nullable = false)
     public String token;
+    public String refreshToken;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
