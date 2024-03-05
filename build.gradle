@@ -61,8 +61,8 @@ dependencies {
     // KAFKA
     implementation 'org.springframework.kafka:spring-kafka'
 
-    // DOCKER COMPOSE
-    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+//    // DOCKER COMPOSE
+//    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 
     // OPEN API
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'

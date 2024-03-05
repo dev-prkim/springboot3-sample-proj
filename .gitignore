@@ -40,3 +40,6 @@ logs
 src/main/generated
 gradle/
 querydsl/
+
+### 접속 경로 노출X (퍼블릭 레포) ###
+src/main/resources/application-dev.yml
