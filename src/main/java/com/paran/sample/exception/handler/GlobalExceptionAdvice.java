@@ -30,11 +30,13 @@ public class GlobalExceptionAdvice {
      */
     @ExceptionHandler({HttpMessageNotReadableException.class})
     public ProblemDetail handleException(HttpMessageNotReadableException e) {
+        log.error("BAD_REQUEST : {}", e.getCause().toString());
+
         var err = ErrorCode.BAD_REQUEST;
         var problemDetail = ProblemDetail.forStatusAndDetail(err.getStatus(), err.getMessage());
         problemDetail.setProperty(ERROR_CODE_PROPERTY_NAME, err.getCode());
 
-        if(e.getCause() != null && e.getCause().getCause() != null) {
+        if(e.getCause().getCause() != null) {
             problemDetail.setDetail(e.getCause().getCause().getMessage());
         }
 

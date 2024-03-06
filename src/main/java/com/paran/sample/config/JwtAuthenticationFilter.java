@@ -1,11 +1,17 @@
 package com.paran.sample.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paran.sample.domain.token.persistence.repository.AccessTokenRepository;
+import com.paran.sample.exception.code.SecurityErrorCode;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.UnavailableException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,22 +41,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String loginId;
-        if (authHeader == null ||!authHeader.startsWith("Bearer ")) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
-        loginId = jwtService.extractUsername(jwt);
-        if (loginId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(loginId);
-            var isTokenValid = tokenRepository.findByToken(jwt)
-                    .map(t -> !t.isExpired() && !t.isRevoked())
-                    .orElse(false);
-            if (jwtService.isTokenValid(jwt, userDetails) && isTokenValid) {
+        try {
+            String jwt = authHeader.substring(7);
+            String loginId = jwtService.extractUsername(jwt);
+            if (loginId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(loginId);
+
+                var isTokenValid = tokenRepository.findByToken(jwt)
+                        .map(t -> !t.isExpired() && !t.isRevoked())
+                        .orElse(false);
+                if(!isTokenValid
+                        || !jwtService.isTokenValid(jwt, userDetails)) {
+                    throw new UnavailableException("Unavailable Token");
+                }
+
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
@@ -60,8 +70,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+
             }
+            filterChain.doFilter(request, response);
+
+        } catch (UnavailableException ex) {
+            returnErrorResult(response, SecurityErrorCode.UNAVAILABLE_TOKEN);
+        } catch (ExpiredJwtException ex) {
+            returnErrorResult(response, SecurityErrorCode.EXPIRED_JWT_TOKEN);
+        } catch (Exception ex) {
+            returnErrorResult(response, SecurityErrorCode.INVALID_ACCESS);
         }
-        filterChain.doFilter(request, response);
+
+    }
+
+    private void returnErrorResult (HttpServletResponse response, SecurityErrorCode err) throws IOException {
+        var problemDetail = ProblemDetail.forStatusAndDetail(err.getStatus(), err.getMessage());
+        problemDetail.setTitle(err.getCode());
+
+        response.setStatus(err.getStatus().value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getOutputStream().print(new ObjectMapper().writeValueAsString(problemDetail));
     }
 }

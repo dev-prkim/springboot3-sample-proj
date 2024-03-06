@@ -19,7 +19,7 @@ public enum ErrorCode {
     //
 
     // [System Error] 9000 ~ 9999
-    NOT_DEFINED_ERR(HttpStatus.INTERNAL_SERVER_ERROR, "9999", "서비스중 오류가 발생했습니다.");
+    NOT_DEFINED_ERR(HttpStatus.INTERNAL_SERVER_ERROR, "9999", "An error occurred during the service");
 
     private final HttpStatus status;
     private final String code;

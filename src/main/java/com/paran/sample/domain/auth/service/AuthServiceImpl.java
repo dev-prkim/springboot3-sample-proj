@@ -1,5 +1,6 @@
 package com.paran.sample.domain.auth.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paran.sample.config.JwtService;
 import com.paran.sample.domain.auth.dto.LoginReq;
 import com.paran.sample.domain.auth.dto.RegisterReq;
@@ -12,12 +13,21 @@ import com.paran.sample.domain.user.persistence.repository.UserRepository;
 import com.paran.sample.domain.token.persistence.type.TokenType;
 import com.paran.sample.exception.BusinessException;
 import com.paran.sample.exception.code.ErrorCode;
+import com.paran.sample.exception.code.SecurityErrorCode;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
 
 import static org.springframework.util.StringUtils.containsWhitespace;
 
@@ -54,12 +64,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Transactional
     @Override
-    public RegisterRes register(RegisterReq req) {
-        validateLoginIdFormat(req.loginId());
-        validateLoginIdDuplication(req.loginId());
+    public RegisterRes register(RegisterReq request) {
+        validateLoginIdFormat(request.loginId());
+        validateLoginIdDuplication(request.loginId());
 
-        var password = passwordEncoder.encode(req.password());
-        var user = req.toUserEntity(password);
+        var password = passwordEncoder.encode(request.password());
+        var user = request.toUserEntity(password);
         var savedUser = userRepository.save(user);
 
         var jwtToken = jwtService.generateToken(user);
@@ -72,20 +82,64 @@ public class AuthServiceImpl implements AuthService {
 
     @Transactional
     @Override
-    public LoginRes login(LoginReq req) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        req.loginId(),
-                        req.password()
-                )
-        );
-        var user = userRepository.findByLoginId(req.loginId())
-                .orElseThrow();
-        var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefreshToken(user);
-        revokeAllAccessTokens(user);
-        saveAccessToken(user, jwtToken, refreshToken);
-        return new LoginRes(user.getAppUserIdx(), user.getLoginId(), user.getName(), jwtToken, refreshToken);
+    public LoginRes login(LoginReq request) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.loginId(),
+                            request.password()
+                    )
+            );
+            var user = userRepository.findByLoginId(request.loginId())
+                    .orElseThrow();
+            var jwtToken = jwtService.generateToken(user);
+            var refreshToken = jwtService.generateRefreshToken(user);
+            revokeAllAccessTokens(user);
+            saveAccessToken(user, jwtToken, refreshToken);
+            return new LoginRes(user.getAppUserIdx(), user.getLoginId(), user.getName(), jwtToken, refreshToken);
+        } catch (BadCredentialsException e) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+    }
+
+    @Transactional
+    @Override
+    public void refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        var authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if(authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return;
+        }
+
+        try {
+            String refreshToken = authHeader.substring(7);
+            String loginId = jwtService.extractUsername(refreshToken);
+            var user = userRepository.findByLoginId(loginId).orElseThrow();
+            var isTokenValid = accessTokenRepository.findByRefreshToken(refreshToken)
+                    .map(t -> !t.isExpired() && !t.isRevoked())
+                    .orElse(false);
+            if(!isTokenValid
+                    || !jwtService.isTokenValid(refreshToken, user)) {
+                throw new Exception("unavailable refresh token");
+            }
+
+            // 새로운 토큰으로 갱신 & 리프레시 토큰 갱신 (기존토큰 및 리프레시토큰 사용 불가)
+            String newToken = jwtService.generateToken(user);
+            String newRefreshToken = jwtService.generateRefreshToken(user);
+            updateAccessToken(newToken, newRefreshToken, refreshToken);
+            var authResponse = new LoginRes(user.getAppUserIdx(), user.getLoginId(), user.getName(), newToken, newRefreshToken);
+
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            new ObjectMapper().writeValue(response.getOutputStream(), authResponse);
+        } catch (Exception e) {
+            SecurityErrorCode err = SecurityErrorCode.UNAVAILABLE_REFRESH_TOKEN;
+            var problemDetail = ProblemDetail.forStatusAndDetail(err.getStatus(), err.getMessage());
+            problemDetail.setTitle(err.getCode());
+
+            response.setStatus(err.getStatus().value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getOutputStream().print(new ObjectMapper().writeValueAsString(problemDetail));
+        }
+
     }
 
     private void saveAccessToken(AppUser user, String jwtToken, String refreshToken) {
@@ -110,6 +164,14 @@ public class AuthServiceImpl implements AuthService {
             token.setRevoked(true);
         });
         accessTokenRepository.saveAll(validUserTokens);
+    }
+
+    private void updateAccessToken(String newJwtToken, String newRefreshToken, String refreshToken) {
+        accessTokenRepository.findByRefreshToken(refreshToken)
+                .ifPresent(t -> {
+                    t.setToken(newJwtToken);
+                    t.setRefreshToken(newRefreshToken);
+                });
     }
 
 }

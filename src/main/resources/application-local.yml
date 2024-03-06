@@ -1,0 +1,48 @@
+server:
+  port: 9090
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:13306/paran_sample?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    username: paran
+    password: 1234
+
+  jpa:
+    open-in-view: true
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+      dialect: org.hibernate.dialect.MySQL8InnoDBDialect
+
+  threads:
+    virtual:
+      enabled: true
+
+application:
+  security:
+    jwt:
+      secret-key: MDY8KT54WQ9UHRFZK9G7PAMEHIQYKGB27E2M39OWOMSKWF72VH2JKZICGUH7R8SN
+      expiration: 300000
+      refresh-token:
+        expiration: 604800000 # 7 days
+
+logging:
+  file:
+    name: ./logs/ecord-api.log
+  logback:
+    rollingpolicy:
+      file-name-pattern: ${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz # by date
+      max-file-size: 10MB # by size
+  level:
+    root: INFO
+    com.zaxxer.hikari: INFO
+    jdbc.resultset: ERROR
+    jdbc.resultsettable: DEBUG
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.type.descriptor.sql.BasicExtractor: OFF

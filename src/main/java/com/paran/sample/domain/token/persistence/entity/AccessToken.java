@@ -17,8 +17,12 @@ public class AccessToken extends AbstractAuditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long accessTokenIdx;
 
+    @Setter
     @Column(unique = true, nullable = false)
     public String token;
+
+    @Setter
+    @Column(unique = true, nullable = false)
     public String refreshToken;
 
     @Enumerated(EnumType.STRING)
