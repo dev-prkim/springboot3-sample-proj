@@ -155,7 +155,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void revokeAllAccessTokens(AppUser user) {
-        var validUserTokens = user.getTokens();
+        var validUserTokens = accessTokenRepository.findAccessTokensByUserIdx(user.getAppUserIdx());
         if (validUserTokens.isEmpty())
             return;
 
