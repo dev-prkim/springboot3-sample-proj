@@ -3,6 +3,7 @@ package com.paran.sample.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paran.sample.domain.token.persistence.repository.AccessTokenRepository;
 import com.paran.sample.exception.code.SecurityErrorCode;
+import com.paran.sample.logging.CachedBodyHttpServletRequest;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -37,13 +39,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        if (request.getServletPath().contains("/api/v1/auth")) {
-            filterChain.doFilter(request, response);
+        String traceId = UUID.randomUUID().toString();
+        var requestWrapper = new CachedBodyHttpServletRequest(request);
+        requestWrapper.setAttribute("traceId", traceId);
+
+        if (requestWrapper.getServletPath().contains("/api/v1/auth")) {
+            filterChain.doFilter(requestWrapper, response);
             return;
         }
-        String authHeader = request.getHeader("Authorization");
+        String authHeader = requestWrapper.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
+            filterChain.doFilter(requestWrapper, response);
             return;
         }
 
@@ -67,12 +73,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         userDetails.getAuthorities()
                 );
                 authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
+                        new WebAuthenticationDetailsSource().buildDetails(requestWrapper)
                 );
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
             }
-            filterChain.doFilter(request, response);
+            filterChain.doFilter(requestWrapper, response);
 
         } catch (UnavailableException ex) {
             returnErrorResult(response, SecurityErrorCode.UNAVAILABLE_TOKEN);

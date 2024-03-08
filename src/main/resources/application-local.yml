@@ -32,17 +32,18 @@ application:
         expiration: 604800000 # 7 days
 
 logging:
-  file:
-    name: ./logs/ecord-api.log
-  logback:
-    rollingpolicy:
-      file-name-pattern: ${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz # by date
-      max-file-size: 10MB # by size
-  level:
-    root: INFO
-    com.zaxxer.hikari: INFO
-    jdbc.resultset: ERROR
-    jdbc.resultsettable: DEBUG
-    org.hibernate.SQL: INFO
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.hibernate.type.descriptor.sql.BasicExtractor: OFF
+  config: classpath:logback.xml
+#  file:
+#    name: ./logs/app.log
+#  logback:
+#    rollingpolicy:
+#      file-name-pattern: ${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz # by date
+#      max-file-size: 10MB # by size
+#  level:
+#    root: INFO
+#    com.zaxxer.hikari: INFO
+#    jdbc.resultset: ERROR
+#    jdbc.resultsettable: DEBUG
+#    org.hibernate.SQL: INFO
+#    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+#    org.hibernate.type.descriptor.sql.BasicExtractor: OFF

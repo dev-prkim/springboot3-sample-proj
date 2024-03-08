@@ -55,8 +55,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.session:spring-session-data-redis'
 
-    // ELASTIC SEARCH
+    // ELK
     implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.2'
 
     // KAFKA
     implementation 'org.springframework.kafka:spring-kafka'
